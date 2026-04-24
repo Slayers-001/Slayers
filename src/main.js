@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { inject } from '@vercel/analytics';
 import { PlayerController } from './PlayerController.js';
 import { MapManager } from './MapManager.js';
 import { UIManager } from './UIManager.js';
@@ -10,6 +11,9 @@ import { SaveSystem } from './SaveSystem.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { NPCDialogueSystem } from './NPCDialogueSystem.js';
 import { MultiplayerClient } from './MultiplayerClient.js';
+
+// Initialize Vercel Web Analytics
+inject();
 
 const save = new SaveSystem();
 const saved = save.merge({
