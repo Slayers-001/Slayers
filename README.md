@@ -31,7 +31,7 @@ Slayers is designed to make learning interactive, engaging, and visually immersi
 
 👑 Credits
 
-Owners: Utkarsh Pandey & Om Adhau
+Owners: Utkarsh Pandey & Om Adhau & Nishant Amrit
 
 🔥 This version is:
 
