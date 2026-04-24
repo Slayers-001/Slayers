@@ -1,56 +1,44 @@
-# Slayers — Advanced Edition
+# Slayers — Advanced Edition (Multiplayer)
 
-Slayers is a polished, modular Three.js exploration game focused on stability, smooth controls, persistence, and clean extensibility.
+Slayers now supports real-time multiplayer sessions over WebSockets while keeping all previous polish systems: movement feel, progression, quests, weather, NPC guidance, and admin tooling.
 
-## Major Systems
+## Multiplayer Added
 
-- **Player feel upgrades**
-  - Smooth acceleration/deceleration
-  - Jump (`Space`), Sprint (`Shift`), Crouch (`C`)
-  - Head bob, camera sway, landing impact shake
-  - Ground checks + wall collision resolution
-- **World polish**
-  - Tuned lighting and fog depth
-  - Dust particles + dynamic rain/lightning weather
-  - Day/night toggle
-  - Guide NPC + easter egg object
-- **Interaction + progression**
-  - Accurate center raycast interaction
-  - Hover feedback and click response
-  - XP, levels, achievements, quests, journal
-- **Advanced UX**
-  - Mini-map (`M`)
-  - Compass indicator
-  - Slide-in info and journal panels
-  - Save indicator and auto-persistence
-- **Admin and settings**
-  - Admin panel (`P`) password: **Slayers**
-  - Noclip, speed slider, teleport dropdown, day/night toggle
-  - Settings (`O`) for sensitivity, volume, shadows, FPS
+- Real-time player sync through a dedicated Node WebSocket server.
+- Room-based sessions (`room-code` field on start screen).
+- Player name labels above remote avatars.
+- Interpolated movement for smooth remote motion.
+- Non-blocking fallback: if server is unavailable, single-player still runs.
 
-## New Files Added for Expansion
+## Existing Polished Systems
 
-- `src/SaveSystem.js` — local persistence for settings/progression/quests/weather state.
-- `src/WeatherSystem.js` — rain particles + lightning flashes.
-- `src/NPCDialogueSystem.js` — guide NPC dialogue rotation and hint flow.
+- Smooth movement with jump/sprint/crouch, collision, landing shake
+- Interaction, questing, XP/leveling, journal, achievements
+- Dynamic weather + day/night controls
+- Admin panel (`P`) password: **Slayers**
+- Settings panel (`O`) for sensitivity, volume, shadows, FPS
+- Mini-map, compass, and save persistence
 
-## Project Structure
+## Files Added for Multiplayer
 
-- `src/main.js` — orchestration, game loop, save scheduling, controls
-- `src/PlayerController.js` — movement + collision
-- `src/MapManager.js` — scene/world/teleports/interactables
-- `src/InteractionSystem.js` — raycasting and interaction callbacks
-- `src/ProgressionSystem.js` — XP, achievements, discovery tracking
-- `src/QuestSystem.js` — objective progression and rendering
-- `src/UIManager.js` — HUD, panels, toasts, compass, save indicator
-- `src/AudioManager.js` — procedural SFX
-- `src/styles.css` — UI styling
+- `server/index.js` — multiplayer websocket authority + room snapshots
+- `src/MultiplayerClient.js` — browser realtime netcode and remote avatars
 
-## Run Locally
+## Run (Client + Multiplayer Server)
 
 ```bash
 npm install
+npm run dev:all
+```
+
+- Vite client: `http://localhost:5173`
+- Multiplayer WS server: `ws://localhost:8080`
+
+## Run Separately
+
+```bash
 npm run dev
+npm run dev:server
 ```
 
 ## Build

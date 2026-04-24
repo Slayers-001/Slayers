@@ -9,6 +9,7 @@ import { AudioManager } from './AudioManager.js';
 import { SaveSystem } from './SaveSystem.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { NPCDialogueSystem } from './NPCDialogueSystem.js';
+import { MultiplayerClient } from './MultiplayerClient.js';
 
 const save = new SaveSystem();
 const saved = save.merge({
@@ -52,6 +53,7 @@ map.setNight(nightMode);
 const minimapCanvas = document.querySelector('#minimap');
 const mini = minimapCanvas.getContext('2d');
 const npcDialog = new NPCDialogueSystem((m) => ui.toastMessage(m), document.querySelector('#info-panel'));
+const multiplayer = new MultiplayerClient(scene, ui);
 
 for (const item of map.interactables) {
   if (progression.discoveredIds.has(item.name)) item.discovered = true;
@@ -105,6 +107,7 @@ let fpsAccum = 0;
 let fpsCount = 0;
 let fpsWindow = 0;
 let saveTimer = 0;
+let networkTick = 0;
 
 function loop(time) {
   requestAnimationFrame(loop);
@@ -114,6 +117,13 @@ function loop(time) {
   map.update(time, rainMode);
   weather.update(dt);
   interaction.update();
+  multiplayer.update(dt);
+
+  networkTick += dt;
+  if (networkTick > 0.05) {
+    networkTick = 0;
+    multiplayer.sendState(player, progression);
+  }
 
   ui.setCompass(player.yaw);
 
@@ -154,10 +164,20 @@ requestAnimationFrame(loop);
 
 function initBoot() {
   const start = document.querySelector('#start-btn');
+  const nameInput = document.querySelector('#player-name');
+  const roomInput = document.querySelector('#room-code');
+
   start.addEventListener('click', () => {
     ui.hideBootOverlay();
     document.body.requestPointerLock();
     audio.init();
+
+    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:8080`;
+    multiplayer.connect({
+      name: nameInput.value.trim() || `Slayer-${Math.floor(Math.random() * 999)}`,
+      room: roomInput.value.trim() || 'default',
+      wsUrl
+    });
   });
 
   document.body.addEventListener('click', () => {
