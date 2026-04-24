@@ -1,62 +1,68 @@
-# Slayers — Polished Edition
+# Slayers — Advanced Edition
 
-A modular Three.js 3D exploration game prototype focused on feel, polish, and stability.
+Slayers is now a polished, modular Three.js exploration game focused on stability, smooth controls, and production-style architecture.
 
-## Features Included
+## Major Upgrades
 
-- Smooth first-person controller with:
-  - acceleration/deceleration
-  - jump, sprint, crouch
-  - head bob, camera sway
-  - landing screen shake
-  - ground + collision handling
-- Smart interaction system:
-  - center-raycast hover highlight
-  - click feedback pulse + panel animation
-- Progression systems:
+- **Player feel improvements**
+  - Smooth acceleration/deceleration
+  - Jump (`Space`), Sprint (`Shift`), Crouch (`C`)
+  - Head bob + movement sway
+  - Ground checks, wall collisions, landing shake
+- **Visual polish**
+  - Softer shadow setup
+  - Balanced daylight/night cycle
+  - Atmospheric fog depth
+  - Animated dust particles + weather toggle (`R`)
+- **Smart interaction**
+  - Accurate center-raycast targeting
+  - Hover highlight and click feedback
+  - Sliding information panel + journal panel
+- **Progression loop**
   - XP + leveling
-  - quests
-  - journal
-  - achievement popups
-- Visual/audio polish:
-  - soft shadows
-  - depth fog
-  - ambient dust particles
-  - footstep/ui/ambient procedural sounds
-- Tools and UX:
-  - mini-map toggle (`M`)
-  - settings panel (`O`): sensitivity, volume, shadows, FPS
-  - admin panel (`P`) with password `Slayers`:
-    - noclip
-    - speed slider
-    - teleport dropdown
-    - day/night toggle
-- Creative touches:
-  - dynamic weather mode toggle (`R` for rainy/foggier ambiance)
-  - credits shown in-game:
-    - Owners: Utkarsh Pandey & Om Adhau
+  - Journal logging
+  - Achievements
+  - Quest tracker
+- **Advanced quality features**
+  - Mini-map (`M`)
+  - Guide NPC
+  - Hidden easter egg object
+  - Admin panel (`P`) with password **Slayers**
+    - Noclip
+    - Speed control
+    - Teleport dropdown
+    - Day/night toggle
+- **Settings panel (`O`)**
+  - Sensitivity slider
+  - Volume slider
+  - Shadows toggle
+  - FPS counter toggle
+- **Credits retained in-game**
+  - Owners: Utkarsh Pandey & Om Adhau
 
-## Run
+## Project Structure
 
-Because this project uses ES modules, run with a local static server.
+- `src/main.js` — game orchestration + loop + input wiring
+- `src/PlayerController.js` — movement and collision logic
+- `src/MapManager.js` — world, environment, particles, teleports
+- `src/InteractionSystem.js` — hover/interact raycasting
+- `src/UIManager.js` — HUD, panels, toast, FPS
+- `src/ProgressionSystem.js` — XP, levels, achievements, journal
+- `src/QuestSystem.js` — quest objectives and UI status
+- `src/AudioManager.js` — procedural sound cues
 
-Example:
+## Run Locally
 
 ```bash
-python3 -m http.server 4173
+npm install
+npm run dev
 ```
 
-Then open `http://localhost:4173`.
+Open the local Vite URL (typically `http://localhost:5173`).
 
-## Controls
+## Build
 
-- **WASD**: Move
-- **Space**: Jump
-- **Shift**: Sprint
-- **C**: Crouch
-- **E**: Interact
-- **J**: Journal
-- **M**: Mini-map
-- **O**: Settings
-- **P**: Admin
-- **R**: Weather toggle
+```bash
+npm run build
+npm run preview
+```

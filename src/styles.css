@@ -1,31 +1,41 @@
 :root {
-  --bg: rgba(12, 16, 20, 0.78);
-  --accent: #4ac0ff;
-  --ok: #5ded7e;
-  --warn: #ffcf4a;
   color-scheme: dark;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --bg: rgba(8, 16, 24, 0.72);
+  --line: #4f7690;
+  --accent: #58c6ff;
+  --ok: #6ce98d;
+  font-family: Inter, Segoe UI, Roboto, sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; overflow: hidden; background: #05080d; color: #ecf6ff; }
-#hud { position: fixed; inset: 0; pointer-events: none; }
-#crosshair { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: 0.8; }
-#status-row { position: fixed; left: 24px; top: 24px; width: 320px; }
-#xp-wrapper { width: 100%; height: 12px; border: 1px solid #79a7c5; background: #13222f; border-radius: 999px; overflow: hidden; }
-#xp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #57beff, #5ded7e); transition: width 0.25s ease; }
-#level-label { margin-top: 8px; font-size: 0.9rem; }
-#quest-box { position: fixed; right: 24px; top: 24px; width: 280px; background: var(--bg); padding: 12px; border: 1px solid #446980; border-radius: 10px; font-size: 0.85rem; }
-.panel { position: fixed; right: 24px; bottom: 24px; width: 340px; min-height: 110px; background: var(--bg); border: 1px solid #4f7b95; padding: 16px; border-radius: 14px; transform: translateX(110%); opacity: 0; transition: transform 260ms ease, opacity 260ms ease; }
-.panel.visible { transform: translateX(0%); opacity: 1; }
-.modal { position: fixed; inset: 0; background: rgba(8, 10, 14, 0.65); display: grid; place-items: center; pointer-events: auto; }
-.modal-card { width: 360px; display: grid; gap: 12px; padding: 18px; background: #0f1822; border: 1px solid #49687d; border-radius: 14px; }
-.modal-card label { display: grid; gap: 5px; font-size: 0.9rem; }
-.modal-card button, .modal-card input, .modal-card select { background: #112333; color: #fff; border: 1px solid #51758c; border-radius: 8px; padding: 7px 10px; }
-#help-overlay { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; background: radial-gradient(circle at center, rgba(15,25,38,0.3), rgba(5,8,12,0.95)); padding: 16px; pointer-events: auto; }
-#help-overlay .credits { color: #b5d8f3; margin-top: 12px; }
-#achievement-toast { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); background: #142635; border: 1px solid #5d8ea8; padding: 10px 14px; border-radius: 10px; font-weight: 600; }
-#fps-counter { position: fixed; left: 24px; bottom: 24px; font-size: 0.8rem; background: #0f1c27; border: 1px solid #476f87; border-radius: 8px; padding: 6px 8px; }
-#minimap { position: fixed; right: 24px; bottom: 24px; border: 1px solid #5d8ca5; background: rgba(10,16,22,.7); border-radius: 8px; pointer-events: none; }
-.hidden { display: none !important; }
-.objective { margin: 4px 0; }
+body { margin: 0; overflow: hidden; background: #061019; color: #e6f7ff; }
+#boot-overlay {
+  position: fixed; inset: 0; z-index: 15; display: grid; place-content: center; text-align: center;
+  background: radial-gradient(circle at center, rgba(22,40,56,.5), rgba(3,7,11,.96));
+  gap: .3rem;
+}
+#boot-overlay button { justify-self: center; padding: .7rem 1.2rem; border-radius: 999px; border: 1px solid var(--line); background: #123147; color: #dff5ff; }
+.credits { color: #add4eb; }
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+#crosshair { position: fixed; width: 10px; height: 10px; left: calc(50% - 5px); top: calc(50% - 5px); border: 1px solid rgba(255,255,255,.9); border-radius: 50%; }
+#top-left { position: fixed; top: 20px; left: 20px; width: min(320px, 45vw); }
+#xp-track { margin-top: 6px; height: 11px; border-radius: 999px; border: 1px solid #78adca; background: rgba(10,26,36,.95); overflow: hidden; }
+#xp-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #50bfff, #79f2a3); transition: width .2s ease; }
+#quest-tracker { position: fixed; top: 20px; right: 20px; min-width: 260px; max-width: 320px; background: var(--bg); border: 1px solid var(--line); padding: 12px; border-radius: 12px; font-size: .87rem; backdrop-filter: blur(4px); }
+#toast { position: fixed; top: 82px; left: 50%; transform: translateX(-50%); background: rgba(18,33,46,.95); border: 1px solid #6289a2; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
+#fps { position: fixed; bottom: 18px; left: 18px; border: 1px solid var(--line); background: var(--bg); padding: 5px 8px; border-radius: 8px; }
+.panel {
+  position: fixed; right: 20px; bottom: 20px; width: min(370px, 85vw); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px; backdrop-filter: blur(5px);
+  transform: translateX(120%); opacity: 0; transition: transform .24s ease, opacity .24s ease;
+}
+.panel.visible { transform: translateX(0); opacity: 1; }
+#journal-panel { bottom: 150px; max-height: 40vh; overflow: auto; }
+#minimap { position: fixed; right: 18px; bottom: 18px; border: 1px solid #5d8da7; border-radius: 10px; background: rgba(7,14,20,.78); z-index: 5; }
+.modal { position: fixed; inset: 0; z-index: 12; display: grid; place-items: center; background: rgba(4,10,15,.66); pointer-events: auto; }
+.modal-card { width: min(380px, 90vw); display: grid; gap: 10px; background: #0e1b27; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.modal-card input, .modal-card button, .modal-card select { border-radius: 8px; border: 1px solid #5c8299; background: #112636; color: #e5f5ff; padding: 8px; }
+.modal-card label { display: grid; gap: 5px; font-size: .9rem; }
+.objective { margin: .25rem 0; }
 .objective.done { color: var(--ok); }
+.interaction-hint { color: #b6ddf0; font-size: .82rem; }
+.hidden { display: none !important; }

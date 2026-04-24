@@ -5,27 +5,30 @@ export class AudioManager {
     this.lastStep = 0;
   }
 
-  ensure() {
+  init() {
     if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
   }
 
-  setVolume(v) { this.master = v; }
+  setVolume(value) { this.master = value; }
 
-  beep(freq, duration = 0.05, type = 'sine', gain = 0.05) {
-    this.ensure();
-    const t = this.ctx.currentTime;
-    const o = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    o.frequency.value = freq;
-    o.type = type;
-    g.gain.value = gain * this.master;
-    o.connect(g).connect(this.ctx.destination);
-    o.start(t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-    o.stop(t + duration);
+  tone({ frequency, duration, gain, type = 'sine' }) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const amp = this.ctx.createGain();
+    const start = this.ctx.currentTime;
+
+    osc.type = type;
+    osc.frequency.value = frequency;
+    amp.gain.value = gain * this.master;
+
+    osc.connect(amp).connect(this.ctx.destination);
+    osc.start(start);
+    amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.stop(start + duration);
   }
 
-  click() { this.beep(780, 0.04, 'triangle', 0.04); }
-  footstep() { this.beep(95 + Math.random() * 40, 0.035, 'square', 0.03); }
-  ambientTick() { this.beep(180, 0.07, 'sine', 0.015); }
+  uiClick() { this.tone({ frequency: 880, duration: 0.05, gain: 0.045, type: 'triangle' }); }
+  step() { this.tone({ frequency: 95 + Math.random() * 60, duration: 0.035, gain: 0.03, type: 'square' }); }
+  ambient() { this.tone({ frequency: 170 + Math.random() * 50, duration: 0.08, gain: 0.01, type: 'sine' }); }
+  land() { this.tone({ frequency: 130, duration: 0.05, gain: 0.025, type: 'sawtooth' }); }
 }

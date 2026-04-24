@@ -1,4 +1,4 @@
-import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
+import * as THREE from 'three';
 import { PlayerController } from './PlayerController.js';
 import { MapManager } from './MapManager.js';
 import { UIManager } from './UIManager.js';
@@ -7,169 +7,200 @@ import { ProgressionSystem } from './ProgressionSystem.js';
 import { QuestSystem } from './QuestSystem.js';
 import { AudioManager } from './AudioManager.js';
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x7fa1bf);
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 250);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 280);
 
 const ui = new UIManager();
 const audio = new AudioManager();
 const map = new MapManager(scene);
 map.init();
 
-const player = new PlayerController(camera, scene);
+const player = new PlayerController(camera, document.body);
+scene.add(player.object);
+
 const progression = new ProgressionSystem(ui);
 const quests = new QuestSystem(ui);
-const interaction = new InteractionSystem(camera, scene, map.interactables, (item) => {
-  ui.showPanel(item.name, item.description);
-  setTimeout(() => ui.hidePanel(), 2200);
-  progression.discover(item);
-  quests.onDiscover(item);
-}, audio);
 
-const minimap = document.querySelector('#minimap');
-const miniCtx = minimap.getContext('2d');
-let showMinimap = false;
-let showJournal = false;
-let showRain = false;
-let night = false;
+let journalOpen = false;
+let minimapOpen = false;
+let rainMode = false;
 
-const settingsModal = document.querySelector('#settings-modal');
-const adminModal = document.querySelector('#admin-modal');
-const adminControls = document.querySelector('#admin-controls');
+const minimapCanvas = document.querySelector('#minimap');
+const mini = minimapCanvas.getContext('2d');
 
-const sensitivityRange = document.querySelector('#sensitivity-range');
-const volumeRange = document.querySelector('#volume-range');
-const shadowsToggle = document.querySelector('#shadows-toggle');
-const fpsToggle = document.querySelector('#fps-toggle');
-const speedRange = document.querySelector('#speed-range');
-const noclipToggle = document.querySelector('#noclip-toggle');
-const dayNightToggle = document.querySelector('#daynight-toggle');
-const teleportSelect = document.querySelector('#teleport-select');
+const interaction = new InteractionSystem(
+  camera,
+  map.interactables,
+  (item) => {
+    const isNew = progression.registerDiscovery(item);
+    if (isNew) item.discovered = true;
+    quests.onInteract(item);
+    ui.showInfo(item.name, item.description);
+    if (!isNew) ui.toastMessage(`ℹ️ ${item.name} already recorded.`);
+  },
+  (item) => {
+    if (item) ui.showInfo(item.name, item.description);
+    else ui.hideInfo();
+  },
+  audio
+);
 
-map.teleports.forEach((t, i) => {
-  const o = document.createElement('option');
-  o.value = String(i);
-  o.textContent = t.label;
-  teleportSelect.append(o);
-});
+setupUiControls();
+initBoot();
 
-document.querySelector('#teleport-btn').onclick = () => {
-  const t = map.teleports[Number(teleportSelect.value)];
-  if (t) player.body.position.copy(t.position);
-};
-
-document.querySelector('#admin-auth').onclick = () => {
-  const ok = document.querySelector('#admin-password').value === 'Slayers';
-  if (ok) {
-    adminControls.classList.remove('hidden');
-    audio.click();
-  }
-};
-document.querySelector('#admin-close').onclick = () => adminModal.classList.add('hidden');
-document.querySelector('#settings-close').onclick = () => settingsModal.classList.add('hidden');
-
-sensitivityRange.oninput = () => player.setSensitivity(Number(sensitivityRange.value));
-volumeRange.oninput = () => audio.setVolume(Number(volumeRange.value));
-shadowsToggle.onchange = () => map.setShadows(shadowsToggle.checked);
-fpsToggle.onchange = () => ui.setFpsVisible(fpsToggle.checked);
-speedRange.oninput = () => player.setSpeed(Number(speedRange.value));
-noclipToggle.onchange = () => (player.noclip = noclipToggle.checked);
-dayNightToggle.onchange = () => {
-  night = dayNightToggle.checked;
-  map.toggleNight(night);
-};
-
-document.body.addEventListener('click', () => {
-  if (document.pointerLockElement !== document.body) {
-    document.body.requestPointerLock();
-    ui.hideHelp();
-    audio.ensure();
-  }
-});
-
-addEventListener('keydown', (e) => {
-  if (e.code === 'KeyO') settingsModal.classList.toggle('hidden');
-  if (e.code === 'KeyP') adminModal.classList.toggle('hidden');
-  if (e.code === 'KeyM') {
-    showMinimap = !showMinimap;
-    minimap.classList.toggle('hidden', !showMinimap);
-  }
-  if (e.code === 'KeyJ') {
-    showJournal = !showJournal;
-    ui.showPanel('Journal', progression.journal.length ? progression.journal.join('<br/>') : 'No discoveries yet.');
-    if (!showJournal) ui.hidePanel();
-  }
-  if (e.code === 'KeyR') showRain = !showRain;
-});
-
-addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 const clock = new THREE.Clock();
-let fpsS = 0;
-let fpsC = 0;
-let fpsT = 0;
+let fpsAccum = 0;
+let fpsCount = 0;
+let fpsWindow = 0;
 
-function drawMinimap() {
-  miniCtx.clearRect(0, 0, minimap.width, minimap.height);
-  miniCtx.fillStyle = 'rgba(12,20,28,0.85)';
-  miniCtx.fillRect(0, 0, minimap.width, minimap.height);
-  const scale = 2;
-  const cx = minimap.width / 2;
-  const cy = minimap.height / 2;
-  miniCtx.fillStyle = '#8ed39f';
-  map.interactables.forEach((obj) => {
-    if (obj.discovered) return;
-    miniCtx.fillRect(cx + obj.mesh.position.x * scale - 2, cy + obj.mesh.position.z * scale - 2, 4, 4);
-  });
-  miniCtx.fillStyle = '#50c2ff';
-  miniCtx.beginPath();
-  miniCtx.arc(cx + player.body.position.x * scale, cy + player.body.position.z * scale, 4, 0, Math.PI * 2);
-  miniCtx.fill();
-}
-
-function animate(time) {
-  requestAnimationFrame(animate);
+function loop(time) {
+  requestAnimationFrame(loop);
   const dt = Math.min(0.033, clock.getDelta());
 
   player.update(dt, map.colliders);
+  map.update(time, rainMode);
   interaction.update();
-  map.animate(time);
 
-  if (showRain) {
-    scene.fog.density = 0.028;
-    if (Math.random() < 0.02) audio.ambientTick();
+  if (rainMode) {
+    scene.fog.density += (0.028 - scene.fog.density) * Math.min(1, dt * 2.5);
+    if (Math.random() < 0.015) audio.ambient();
   } else {
-    scene.fog.density += (0.02 - scene.fog.density) * Math.min(1, dt * 2);
+    scene.fog.density += (0.016 - scene.fog.density) * Math.min(1, dt * 2.5);
   }
 
-  const moving = Math.abs(player.velocity.x) + Math.abs(player.velocity.z) > 1.8 && player.grounded;
-  if (moving && time - audio.lastStep > (player.keys.has('ShiftLeft') ? 280 : 430)) {
+  const moving = player.grounded && Math.hypot(player.velocity.x, player.velocity.z) > 1.7;
+  const stepDelay = (player.keys.has('ShiftLeft') || player.keys.has('ShiftRight')) ? 250 : 410;
+  if (moving && time - audio.lastStep > stepDelay) {
     audio.lastStep = time;
-    audio.footstep();
+    audio.step();
   }
+  if (player.landingImpact > 0.95) audio.land();
 
-  if (showMinimap) drawMinimap();
+  if (minimapOpen) drawMinimap();
   renderer.render(scene, camera);
 
-  fpsS += 1 / dt;
-  fpsC++;
-  fpsT += dt;
-  if (fpsT > 0.45) {
-    ui.setFpsText(fpsS / fpsC);
-    fpsS = 0;
-    fpsC = 0;
-    fpsT = 0;
+  fpsAccum += 1 / dt;
+  fpsCount += 1;
+  fpsWindow += dt;
+  if (fpsWindow > 0.4) {
+    ui.setFps(fpsAccum / fpsCount);
+    fpsAccum = 0;
+    fpsCount = 0;
+    fpsWindow = 0;
   }
 }
-animate(0);
+requestAnimationFrame(loop);
+
+function initBoot() {
+  const start = document.querySelector('#start-btn');
+  start.addEventListener('click', () => {
+    ui.hideBootOverlay();
+    document.body.requestPointerLock();
+    audio.init();
+  });
+
+  document.body.addEventListener('click', () => {
+    if (!document.querySelector('#boot-overlay').classList.contains('hidden')) return;
+    if (document.pointerLockElement !== document.body) document.body.requestPointerLock();
+  });
+}
+
+function setupUiControls() {
+  const settings = document.querySelector('#settings-modal');
+  const admin = document.querySelector('#admin-modal');
+
+  const sensitivity = document.querySelector('#sensitivity');
+  const volume = document.querySelector('#volume');
+  const toggleShadows = document.querySelector('#toggle-shadows');
+  const toggleFps = document.querySelector('#toggle-fps');
+  sensitivity.addEventListener('input', () => player.setSensitivity(Number(sensitivity.value)));
+  volume.addEventListener('input', () => audio.setVolume(Number(volume.value)));
+  toggleShadows.addEventListener('change', () => map.setShadows(toggleShadows.checked));
+  toggleFps.addEventListener('change', () => ui.setFpsVisible(toggleFps.checked));
+
+  document.querySelector('#close-settings').onclick = () => settings.classList.add('hidden');
+
+  const teleportSelect = document.querySelector('#admin-teleport');
+  map.teleports.forEach((entry, idx) => {
+    const option = document.createElement('option');
+    option.value = String(idx);
+    option.textContent = entry.label;
+    teleportSelect.append(option);
+  });
+
+  document.querySelector('#admin-unlock').onclick = () => {
+    if (document.querySelector('#admin-pass').value === 'Slayers') {
+      document.querySelector('#admin-controls').classList.remove('hidden');
+      ui.toastMessage('✅ Admin unlocked');
+      audio.uiClick();
+    } else {
+      ui.toastMessage('❌ Invalid admin password');
+    }
+  };
+
+  document.querySelector('#close-admin').onclick = () => admin.classList.add('hidden');
+  document.querySelector('#noclip').onchange = (e) => (player.noclip = e.target.checked);
+  document.querySelector('#admin-speed').oninput = (e) => player.setSpeed(Number(e.target.value));
+  document.querySelector('#admin-go').onclick = () => {
+    const target = map.teleports[Number(teleportSelect.value)];
+    if (!target) return;
+    player.object.position.copy(target.point);
+    ui.toastMessage(`🧭 Teleported to ${target.label}`);
+  };
+  document.querySelector('#toggle-night').onchange = (e) => map.setNight(e.target.checked);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyO') settings.classList.toggle('hidden');
+    if (e.code === 'KeyP') admin.classList.toggle('hidden');
+    if (e.code === 'KeyM') {
+      minimapOpen = !minimapOpen;
+      minimapCanvas.classList.toggle('hidden', !minimapOpen);
+    }
+    if (e.code === 'KeyJ') {
+      journalOpen = !journalOpen;
+      if (journalOpen) ui.showJournal(progression.journalEntries);
+      else ui.hideJournal();
+    }
+    if (e.code === 'KeyR') {
+      rainMode = !rainMode;
+      ui.toastMessage(rainMode ? '🌧️ Light rain enabled' : '☀️ Rain cleared');
+    }
+  });
+}
+
+function drawMinimap() {
+  const width = minimapCanvas.width;
+  const height = minimapCanvas.height;
+  mini.clearRect(0, 0, width, height);
+
+  mini.fillStyle = 'rgba(8,16,24,0.92)';
+  mini.fillRect(0, 0, width, height);
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const scale = 2;
+
+  for (const item of map.interactables) {
+    if (item.discovered) continue;
+    mini.fillStyle = item.type === 'npc' ? '#ffd27f' : '#8be198';
+    mini.fillRect(centerX + item.mesh.position.x * scale - 2, centerY + item.mesh.position.z * scale - 2, 4, 4);
+  }
+
+  mini.fillStyle = '#4bc2ff';
+  mini.beginPath();
+  mini.arc(centerX + player.object.position.x * scale, centerY + player.object.position.z * scale, 4.5, 0, Math.PI * 2);
+  mini.fill();
+}
