@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slayers — Polished Edition</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="hud">
+      <div id="crosshair">+</div>
+      <div id="status-row">
+        <div id="xp-wrapper"><div id="xp-fill"></div></div>
+        <div id="level-label">Level 1 · XP 0/100</div>
+      </div>
+      <div id="quest-box"></div>
+      <div id="achievement-toast" class="hidden"></div>
+      <div id="fps-counter" class="hidden"></div>
+    </div>
+
+    <div id="panel" class="panel hidden"></div>
+
+    <div id="admin-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Admin Panel</h2>
+        <div id="admin-login">
+          <input id="admin-password" type="password" placeholder="Enter password" />
+          <button id="admin-auth">Unlock</button>
+        </div>
+        <div id="admin-controls" class="hidden">
+          <label><input type="checkbox" id="noclip-toggle" /> Noclip</label>
+          <label>Speed <input type="range" min="2" max="20" value="6" id="speed-range" /></label>
+          <label>Teleport
+            <select id="teleport-select"></select>
+          </label>
+          <button id="teleport-btn">Go</button>
+          <label><input type="checkbox" id="daynight-toggle" /> Night Mode</label>
+        </div>
+        <button id="admin-close">Close</button>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Settings</h2>
+        <label>Sensitivity <input type="range" min="0.0008" max="0.004" step="0.0001" value="0.002" id="sensitivity-range" /></label>
+        <label>Volume <input type="range" min="0" max="1" step="0.01" value="0.5" id="volume-range" /></label>
+        <label><input type="checkbox" id="shadows-toggle" checked /> Shadows</label>
+        <label><input type="checkbox" id="fps-toggle" /> FPS Counter</label>
+        <button id="settings-close">Close</button>
+      </div>
+    </div>
+
+    <div id="help-overlay">
+      <h1>Slayers: Polished Edition</h1>
+      <p>Click to lock pointer and begin.</p>
+      <p>WASD move · Space jump · Shift sprint · C crouch · E interact · J journal · M mini-map · O settings · P admin</p>
+      <p class="credits">Owners: Utkarsh Pandey &amp; Om Adhau</p>
+    </div>
+
+    <canvas id="minimap" width="220" height="220" class="hidden"></canvas>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
