@@ -1,7 +1,7 @@
 export class QuestSystem {
-  constructor(ui) {
+  constructor(ui, snapshot = null) {
     this.ui = ui;
-    this.quests = [
+    this.quests = snapshot?.quests ?? [
       { id: 'find-five', title: 'Find 5 objects in the world', progress: 0, goal: 5, done: false },
       { id: 'museum', title: 'Explore Museum Hall', progress: 0, goal: 1, done: false },
       { id: 'npc', title: 'Talk to the Guide NPC', progress: 0, goal: 1, done: false }
@@ -9,8 +9,10 @@ export class QuestSystem {
     this.render();
   }
 
+  serialize() { return { quests: this.quests }; }
+
   onInteract(item) {
-    this.increment('find-five', 1);
+    if (item.type !== 'npc') this.increment('find-five', 1);
     if (item.area === 'Museum Hall') this.increment('museum', 1);
     if (item.type === 'npc') this.increment('npc', 1);
     this.render();

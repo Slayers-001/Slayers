@@ -23,6 +23,9 @@ body { margin: 0; overflow: hidden; background: #061019; color: #e6f7ff; }
 #quest-tracker { position: fixed; top: 20px; right: 20px; min-width: 260px; max-width: 320px; background: var(--bg); border: 1px solid var(--line); padding: 12px; border-radius: 12px; font-size: .87rem; backdrop-filter: blur(4px); }
 #toast { position: fixed; top: 82px; left: 50%; transform: translateX(-50%); background: rgba(18,33,46,.95); border: 1px solid #6289a2; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
 #fps { position: fixed; bottom: 18px; left: 18px; border: 1px solid var(--line); background: var(--bg); padding: 5px 8px; border-radius: 8px; }
+#compass { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 6px 14px; font-weight: 700; letter-spacing: .08em; }
+#save-indicator { position: fixed; top: 56px; left: 50%; transform: translateX(-50%); border: 1px solid #6f9bb4; background: rgba(14,27,39,.95); border-radius: 999px; padding: 4px 10px; font-size: .75rem; }
+
 .panel {
   position: fixed; right: 20px; bottom: 20px; width: min(370px, 85vw); background: var(--bg);
   border: 1px solid var(--line); border-radius: 14px; padding: 14px; backdrop-filter: blur(5px);

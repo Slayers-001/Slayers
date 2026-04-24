@@ -8,6 +8,8 @@ export class UIManager {
     this.infoPanel = document.querySelector('#info-panel');
     this.journalPanel = document.querySelector('#journal-panel');
     this.fpsLabel = document.querySelector('#fps');
+    this.compass = document.querySelector('#compass');
+    this.saveIndicator = document.querySelector('#save-indicator');
   }
 
   hideBootOverlay() { this.bootOverlay.classList.add('hidden'); }
@@ -46,6 +48,18 @@ export class UIManager {
     this.toast.textContent = message;
     this.toast.classList.remove('hidden');
     setTimeout(() => this.toast.classList.add('hidden'), 2100);
+  }
+
+  setCompass(yawRadians) {
+    const dir = ((yawRadians % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const index = Math.round(dir / (Math.PI / 4)) % sectors.length;
+    this.compass.textContent = sectors[index];
+  }
+
+  showSaved() {
+    this.saveIndicator.classList.remove('hidden');
+    setTimeout(() => this.saveIndicator.classList.add('hidden'), 800);
   }
 
   setFpsVisible(enabled) { this.fpsLabel.classList.toggle('hidden', !enabled); }

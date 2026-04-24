@@ -6,6 +6,17 @@ import { InteractionSystem } from './InteractionSystem.js';
 import { ProgressionSystem } from './ProgressionSystem.js';
 import { QuestSystem } from './QuestSystem.js';
 import { AudioManager } from './AudioManager.js';
+import { SaveSystem } from './SaveSystem.js';
+import { WeatherSystem } from './WeatherSystem.js';
+import { NPCDialogueSystem } from './NPCDialogueSystem.js';
+
+const save = new SaveSystem();
+const saved = save.merge({
+  settings: { sensitivity: 0.0022, volume: 0.5, shadows: true, fps: false },
+  progression: null,
+  quests: null,
+  flags: { rainMode: false, nightMode: false }
+});
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
@@ -25,35 +36,63 @@ map.init();
 const player = new PlayerController(camera, document.body);
 scene.add(player.object);
 
-const progression = new ProgressionSystem(ui);
-const quests = new QuestSystem(ui);
+const progression = new ProgressionSystem(ui, saved.progression);
+const quests = new QuestSystem(ui, saved.quests);
 
 let journalOpen = false;
 let minimapOpen = false;
-let rainMode = false;
+let rainMode = saved.flags.rainMode;
+let nightMode = saved.flags.nightMode;
+
+const weather = new WeatherSystem(scene);
+weather.init();
+weather.toggle(rainMode);
+map.setNight(nightMode);
 
 const minimapCanvas = document.querySelector('#minimap');
 const mini = minimapCanvas.getContext('2d');
+const npcDialog = new NPCDialogueSystem((m) => ui.toastMessage(m), document.querySelector('#info-panel'));
+
+for (const item of map.interactables) {
+  if (progression.discoveredIds.has(item.name)) item.discovered = true;
+}
 
 const interaction = new InteractionSystem(
   camera,
   map.interactables,
   (item) => {
+    if (item.type === 'npc') {
+      npcDialog.talk();
+      quests.onInteract(item);
+      queueSave();
+      return;
+    }
+
     const isNew = progression.registerDiscovery(item);
-    if (isNew) item.discovered = true;
+    if (isNew) {
+      item.discovered = true;
+      ui.showInfo(item.name, item.description);
+      queueSave();
+    } else {
+      ui.toastMessage(`ℹ️ ${item.name} already recorded.`);
+    }
+
     quests.onInteract(item);
-    ui.showInfo(item.name, item.description);
-    if (!isNew) ui.toastMessage(`ℹ️ ${item.name} already recorded.`);
   },
   (item) => {
-    if (item) ui.showInfo(item.name, item.description);
-    else ui.hideInfo();
+    if (!item) {
+      ui.hideInfo();
+      return;
+    }
+    if (item.type === 'npc') ui.showInfo(item.name, 'Press E to talk with the guide.');
+    else ui.showInfo(item.name, item.description);
   },
   audio
 );
 
 setupUiControls();
 initBoot();
+applySavedSettings();
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -65,6 +104,7 @@ const clock = new THREE.Clock();
 let fpsAccum = 0;
 let fpsCount = 0;
 let fpsWindow = 0;
+let saveTimer = 0;
 
 function loop(time) {
   requestAnimationFrame(loop);
@@ -72,7 +112,10 @@ function loop(time) {
 
   player.update(dt, map.colliders);
   map.update(time, rainMode);
+  weather.update(dt);
   interaction.update();
+
+  ui.setCompass(player.yaw);
 
   if (rainMode) {
     scene.fog.density += (0.028 - scene.fog.density) * Math.min(1, dt * 2.5);
@@ -101,6 +144,11 @@ function loop(time) {
     fpsCount = 0;
     fpsWindow = 0;
   }
+
+  if (saveTimer > 0) {
+    saveTimer -= dt;
+    if (saveTimer <= 0) persist();
+  }
 }
 requestAnimationFrame(loop);
 
@@ -126,10 +174,16 @@ function setupUiControls() {
   const volume = document.querySelector('#volume');
   const toggleShadows = document.querySelector('#toggle-shadows');
   const toggleFps = document.querySelector('#toggle-fps');
-  sensitivity.addEventListener('input', () => player.setSensitivity(Number(sensitivity.value)));
-  volume.addEventListener('input', () => audio.setVolume(Number(volume.value)));
-  toggleShadows.addEventListener('change', () => map.setShadows(toggleShadows.checked));
-  toggleFps.addEventListener('change', () => ui.setFpsVisible(toggleFps.checked));
+
+  sensitivity.value = String(saved.settings.sensitivity);
+  volume.value = String(saved.settings.volume);
+  toggleShadows.checked = Boolean(saved.settings.shadows);
+  toggleFps.checked = Boolean(saved.settings.fps);
+
+  sensitivity.addEventListener('input', () => { player.setSensitivity(Number(sensitivity.value)); queueSave(); });
+  volume.addEventListener('input', () => { audio.setVolume(Number(volume.value)); queueSave(); });
+  toggleShadows.addEventListener('change', () => { map.setShadows(toggleShadows.checked); queueSave(); });
+  toggleFps.addEventListener('change', () => { ui.setFpsVisible(toggleFps.checked); queueSave(); });
 
   document.querySelector('#close-settings').onclick = () => settings.classList.add('hidden');
 
@@ -160,7 +214,11 @@ function setupUiControls() {
     player.object.position.copy(target.point);
     ui.toastMessage(`🧭 Teleported to ${target.label}`);
   };
-  document.querySelector('#toggle-night').onchange = (e) => map.setNight(e.target.checked);
+  document.querySelector('#toggle-night').onchange = (e) => {
+    nightMode = e.target.checked;
+    map.setNight(nightMode);
+    queueSave();
+  };
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyO') settings.classList.toggle('hidden');
@@ -176,9 +234,37 @@ function setupUiControls() {
     }
     if (e.code === 'KeyR') {
       rainMode = !rainMode;
+      weather.toggle(rainMode);
       ui.toastMessage(rainMode ? '🌧️ Light rain enabled' : '☀️ Rain cleared');
+      queueSave();
     }
   });
+}
+
+function applySavedSettings() {
+  player.setSensitivity(saved.settings.sensitivity);
+  audio.setVolume(saved.settings.volume);
+  map.setShadows(Boolean(saved.settings.shadows));
+  ui.setFpsVisible(Boolean(saved.settings.fps));
+}
+
+function queueSave() {
+  saveTimer = 0.8;
+}
+
+function persist() {
+  save.save({
+    settings: {
+      sensitivity: player.mouseSensitivity,
+      volume: audio.master,
+      shadows: map.sun.castShadow,
+      fps: !document.querySelector('#fps').classList.contains('hidden')
+    },
+    progression: progression.serialize(),
+    quests: quests.serialize(),
+    flags: { rainMode, nightMode }
+  });
+  ui.showSaved();
 }
 
 function drawMinimap() {
@@ -192,6 +278,9 @@ function drawMinimap() {
   const centerX = width / 2;
   const centerY = height / 2;
   const scale = 2;
+
+  mini.strokeStyle = '#355268';
+  mini.strokeRect(24, 24, width - 48, height - 48);
 
   for (const item of map.interactables) {
     if (item.discovered) continue;

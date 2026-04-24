@@ -1,13 +1,24 @@
 export class ProgressionSystem {
-  constructor(ui) {
+  constructor(ui, snapshot = null) {
     this.ui = ui;
-    this.level = 1;
-    this.xp = 0;
-    this.nextXp = 110;
-    this.journalEntries = [];
-    this.achievements = new Set();
-    this.discoveredIds = new Set();
+    this.level = snapshot?.level ?? 1;
+    this.xp = snapshot?.xp ?? 0;
+    this.nextXp = snapshot?.nextXp ?? 110;
+    this.journalEntries = snapshot?.journalEntries ?? [];
+    this.achievements = new Set(snapshot?.achievements ?? []);
+    this.discoveredIds = new Set(snapshot?.discoveredIds ?? []);
     this.ui.updateProgress(this.level, this.xp, this.nextXp);
+  }
+
+  serialize() {
+    return {
+      level: this.level,
+      xp: this.xp,
+      nextXp: this.nextXp,
+      journalEntries: this.journalEntries,
+      achievements: [...this.achievements],
+      discoveredIds: [...this.discoveredIds]
+    };
   }
 
   registerDiscovery(item) {
