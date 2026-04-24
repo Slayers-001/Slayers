@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slayers | Advanced Edition</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="boot-overlay">
+      <h1>Slayers</h1>
+      <p>WASD Move · Space Jump · Shift Sprint · C Crouch · E Interact</p>
+      <p>J Journal · M Minimap · O Settings · P Admin</p>
+      <div id="mp-fields">
+        <input id="player-name" placeholder="Player name" maxlength="24" />
+        <input id="room-code" placeholder="Room (default)" maxlength="32" />
+      </div>
+      <button id="start-btn">Start Adventure</button>
+      <p class="credits">Owners: Utkarsh Pandey &amp; Om Adhau</p>
+    </div>
+
+    <div id="hud">
+      <div id="crosshair"></div>
+      <div id="top-left">
+        <div id="level-text">Level 1</div>
+        <div id="xp-track"><div id="xp-bar"></div></div>
+      </div>
+      <div id="quest-tracker"></div>
+      <div id="toast" class="hidden"></div>
+      <div id="fps" class="hidden">0 FPS</div>
+      <div id="compass">N</div>
+      <div id="save-indicator" class="hidden">Saved</div>
+    </div>
+
+    <aside id="info-panel" class="panel hidden"></aside>
+    <aside id="journal-panel" class="panel hidden"></aside>
+
+    <canvas id="minimap" width="220" height="220" class="hidden"></canvas>
+
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Settings</h2>
+        <label>Sensitivity <input id="sensitivity" type="range" min="0.001" max="0.004" step="0.0001" value="0.0022" /></label>
+        <label>Master Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.5" /></label>
+        <label><input id="toggle-shadows" type="checkbox" checked /> Shadows</label>
+        <label><input id="toggle-fps" type="checkbox" /> FPS Counter</label>
+        <button id="close-settings">Close</button>
+      </div>
+    </div>
+
+    <div id="admin-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Admin Controls</h2>
+        <div id="admin-lock">
+          <input id="admin-pass" placeholder="Password" type="password" />
+          <button id="admin-unlock">Unlock</button>
+        </div>
+        <div id="admin-controls" class="hidden">
+          <label><input id="noclip" type="checkbox" /> Noclip</label>
+          <label>Move Speed <input id="admin-speed" type="range" min="3" max="22" step="0.1" value="7" /></label>
+          <label>Teleport
+            <select id="admin-teleport"></select>
+          </label>
+          <button id="admin-go">Teleport</button>
+          <label><input id="toggle-night" type="checkbox" /> Night Mode</label>
+        </div>
+        <button id="close-admin">Close</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
