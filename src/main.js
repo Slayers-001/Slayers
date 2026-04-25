@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { inject } from '@vercel/analytics';
 import { PlayerController } from './PlayerController.js';
 import { MapManager } from './MapManager.js';
 import { UIManager } from './UIManager.js';
@@ -10,6 +11,9 @@ import { SaveSystem } from './SaveSystem.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { NPCDialogueSystem } from './NPCDialogueSystem.js';
 import { MultiplayerClient } from './MultiplayerClient.js';
+
+// Initialize Vercel Web Analytics
+inject();
 
 const save = new SaveSystem();
 const saved = save.merge({
@@ -38,7 +42,7 @@ const player = new PlayerController(camera, document.body);
 scene.add(player.object);
 
 const progression = new ProgressionSystem(ui, saved.progression);
-const quests = new QuestSystem(ui, saved.quests, Math.min(12, map.collectibleCount));
+const quests = new QuestSystem(ui, saved.quests);
 
 let journalOpen = false;
 let minimapOpen = false;
@@ -58,7 +62,6 @@ const multiplayer = new MultiplayerClient(scene, ui);
 for (const item of map.interactables) {
   if (progression.discoveredIds.has(item.name)) item.discovered = true;
 }
-ui.setDiscoveryCount(progression.discoveredIds.size, map.collectibleCount);
 
 const interaction = new InteractionSystem(
   camera,
@@ -72,11 +75,9 @@ const interaction = new InteractionSystem(
     }
 
     const isNew = progression.registerDiscovery(item);
-    item.wasKnown = !isNew;
     if (isNew) {
       item.discovered = true;
-      ui.showInfo(item.name, item.description, item.rarity);
-      ui.setDiscoveryCount(progression.discoveredIds.size, map.collectibleCount);
+      ui.showInfo(item.name, item.description);
       queueSave();
     } else {
       ui.toastMessage(`ℹ️ ${item.name} already recorded.`);
@@ -90,7 +91,7 @@ const interaction = new InteractionSystem(
       return;
     }
     if (item.type === 'npc') ui.showInfo(item.name, 'Press E to talk with the guide.');
-    else ui.showInfo(item.name, item.description, item.rarity);
+    else ui.showInfo(item.name, item.description);
   },
   audio
 );
@@ -129,7 +130,6 @@ function loop(time) {
   }
 
   ui.setCompass(player.yaw);
-  ui.setOnlineCount(multiplayer.remotePlayers.size + (multiplayer.connected ? 1 : 0));
 
   if (rainMode) {
     scene.fog.density += (0.028 - scene.fog.density) * Math.min(1, dt * 2.5);

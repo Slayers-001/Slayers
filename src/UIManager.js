@@ -10,8 +10,6 @@ export class UIManager {
     this.fpsLabel = document.querySelector('#fps');
     this.compass = document.querySelector('#compass');
     this.saveIndicator = document.querySelector('#save-indicator');
-    this.discoveryCount = document.querySelector('#discover-count');
-    this.onlineCount = document.querySelector('#online-count');
   }
 
   hideBootOverlay() { this.bootOverlay.classList.add('hidden'); }
@@ -23,9 +21,8 @@ export class UIManager {
 
   setQuestHtml(html) { this.questTracker.innerHTML = html; }
 
-  showInfo(title, body, rarity = null) {
-    const badge = rarity ? `<div class="rarity-tag">${rarity.toUpperCase()}</div>` : '';
-    this.infoPanel.innerHTML = `${badge}<h3>${title}</h3><p>${body}</p><p class="interaction-hint">Press E to interact.</p>`;
+  showInfo(title, body) {
+    this.infoPanel.innerHTML = `<h3>${title}</h3><p>${body}</p><p class="interaction-hint">Press E to interact.</p>`;
     this.infoPanel.classList.remove('hidden');
     requestAnimationFrame(() => this.infoPanel.classList.add('visible'));
   }
@@ -36,9 +33,7 @@ export class UIManager {
   }
 
   showJournal(entries) {
-    const content = entries.length
-      ? entries.map((entry, i) => `<div class="journal-row">${i + 1}. ${entry}</div>`).join('')
-      : '<p>No discoveries yet.</p>';
+    const content = entries.length ? entries.map((entry, i) => `<div>${i + 1}. ${entry}</div>`).join('') : '<p>No discoveries yet.</p>';
     this.journalPanel.innerHTML = `<h3>Explorer Journal</h3>${content}`;
     this.journalPanel.classList.remove('hidden');
     requestAnimationFrame(() => this.journalPanel.classList.add('visible'));
@@ -60,16 +55,6 @@ export class UIManager {
     const sectors = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     const index = Math.round(dir / (Math.PI / 4)) % sectors.length;
     this.compass.textContent = sectors[index];
-  }
-
-  setDiscoveryCount(found, total) {
-    if (!this.discoveryCount) return;
-    this.discoveryCount.textContent = `Relics ${found}/${total}`;
-  }
-
-  setOnlineCount(count) {
-    if (!this.onlineCount) return;
-    this.onlineCount.textContent = `${count} online`;
   }
 
   showSaved() {

@@ -5,6 +5,11 @@ export class QuestSystem {
       { id: 'find-many', title: `Find ${findGoal} relics`, progress: 0, goal: findGoal, done: false },
       { id: 'museum', title: 'Explore Museum Hall', progress: 0, goal: 3, done: false },
       { id: 'market', title: 'Collect items in Market Lane', progress: 0, goal: 3, done: false },
+  constructor(ui, snapshot = null) {
+    this.ui = ui;
+    this.quests = snapshot?.quests ?? [
+      { id: 'find-five', title: 'Find 5 objects in the world', progress: 0, goal: 5, done: false },
+      { id: 'museum', title: 'Explore Museum Hall', progress: 0, goal: 1, done: false },
       { id: 'npc', title: 'Talk to the Guide NPC', progress: 0, goal: 1, done: false }
     ];
     this.render();
@@ -16,6 +21,8 @@ export class QuestSystem {
     if (item.type !== 'npc' && !item.wasKnown) this.increment('find-many', 1);
     if (item.area === 'Museum Hall' && !item.wasKnown) this.increment('museum', 1);
     if (item.area === 'Market Lane' && !item.wasKnown) this.increment('market', 1);
+    if (item.type !== 'npc') this.increment('find-five', 1);
+    if (item.area === 'Museum Hall') this.increment('museum', 1);
     if (item.type === 'npc') this.increment('npc', 1);
     this.render();
   }
@@ -31,6 +38,7 @@ export class QuestSystem {
     const html = `<h4>Competition Objectives</h4>${this.quests
       .map((q) => `<div class="objective ${q.done ? 'done' : ''}">${q.done ? '✓' : '•'} ${q.title} (${q.progress}/${q.goal})</div>`)
       .join('')}`;
+    const html = `<h4>Active Quests</h4>${this.quests.map((q) => `<div class="objective ${q.done ? 'done' : ''}">${q.done ? '✓' : '•'} ${q.title} (${q.progress}/${q.goal})</div>`).join('')}`;
     this.ui.setQuestHtml(html);
   }
 }
