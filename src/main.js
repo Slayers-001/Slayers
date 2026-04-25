@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { inject } from '@vercel/analytics';
 import { PlayerController } from './PlayerController.js';
 import { MapManager } from './MapManager.js';
 import { UIManager } from './UIManager.js';
@@ -10,6 +11,9 @@ import { SaveSystem } from './SaveSystem.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { NPCDialogueSystem } from './NPCDialogueSystem.js';
 import { MultiplayerClient } from './MultiplayerClient.js';
+
+// Initialize Vercel Web Analytics
+inject();
 
 const save = new SaveSystem();
 const saved = save.merge({
@@ -38,14 +42,12 @@ const player = new PlayerController(camera, document.body);
 scene.add(player.object);
 
 const progression = new ProgressionSystem(ui, saved.progression);
-const quests = new QuestSystem(ui, saved.quests, Math.min(12, map.collectibleCount));
+const quests = new QuestSystem(ui, saved.quests);
 
 let journalOpen = false;
 let minimapOpen = false;
 let rainMode = saved.flags.rainMode;
 let nightMode = saved.flags.nightMode;
-let autoCycle = true;
-let dayPhase = 0;
 
 const weather = new WeatherSystem(scene);
 weather.init();
@@ -60,8 +62,6 @@ const multiplayer = new MultiplayerClient(scene, ui);
 for (const item of map.interactables) {
   if (progression.discoveredIds.has(item.name)) item.discovered = true;
 }
-ui.setDiscoveryCount(progression.discoveredIds.size, map.collectibleCount);
-ui.setTargetHint('Target: scanning...');
 
 const interaction = new InteractionSystem(
   camera,
@@ -75,12 +75,9 @@ const interaction = new InteractionSystem(
     }
 
     const isNew = progression.registerDiscovery(item);
-    item.wasKnown = !isNew;
     if (isNew) {
       item.discovered = true;
-      ui.showInfo(item.name, item.description, item.rarity);
-      ui.setDiscoveryCount(progression.discoveredIds.size, map.collectibleCount);
-      ui.setTargetHint('Target: scanning...');
+      ui.showInfo(item.name, item.description);
       queueSave();
     } else {
       ui.toastMessage(`ℹ️ ${item.name} already recorded.`);
@@ -94,10 +91,9 @@ const interaction = new InteractionSystem(
       return;
     }
     if (item.type === 'npc') ui.showInfo(item.name, 'Press E to talk with the guide.');
-    else ui.showInfo(item.name, item.description, item.rarity);
+    else ui.showInfo(item.name, item.description);
   },
-  audio,
-  () => ui.toastMessage('No interactable object in range.')
+  audio
 );
 
 setupUiControls();
@@ -116,7 +112,6 @@ let fpsCount = 0;
 let fpsWindow = 0;
 let saveTimer = 0;
 let networkTick = 0;
-let hintTick = 0;
 
 function loop(time) {
   requestAnimationFrame(loop);
@@ -135,21 +130,6 @@ function loop(time) {
   }
 
   ui.setCompass(player.yaw);
-  ui.setOnlineCount(multiplayer.remotePlayers.size + (multiplayer.connected ? 1 : 0));
-
-  hintTick += dt;
-  if (hintTick > 0.2) {
-    hintTick = 0;
-    updateTargetHint();
-  }
-
-  if (autoCycle) {
-    dayPhase += dt * 0.04;
-    const cycle = (Math.sin(dayPhase) + 1) * 0.5;
-    map.sun.intensity = 0.24 + cycle * 0.95;
-    scene.fog.color.setRGB(0.18 + cycle * 0.36, 0.25 + cycle * 0.34, 0.36 + cycle * 0.3);
-    scene.background.setRGB(0.06 + cycle * 0.5, 0.11 + cycle * 0.48, 0.18 + cycle * 0.46);
-  }
 
   if (rainMode) {
     scene.fog.density += (0.028 - scene.fog.density) * Math.min(1, dt * 2.5);
@@ -218,7 +198,6 @@ function setupUiControls() {
   const volume = document.querySelector('#volume');
   const toggleShadows = document.querySelector('#toggle-shadows');
   const toggleFps = document.querySelector('#toggle-fps');
-  const toggleCycle = document.querySelector('#toggle-cycle');
 
   sensitivity.value = String(saved.settings.sensitivity);
   volume.value = String(saved.settings.volume);
@@ -261,18 +240,9 @@ function setupUiControls() {
   };
   document.querySelector('#toggle-night').onchange = (e) => {
     nightMode = e.target.checked;
-    autoCycle = false;
-    if (toggleCycle) toggleCycle.checked = false;
     map.setNight(nightMode);
     queueSave();
   };
-
-  if (toggleCycle) {
-    toggleCycle.onchange = (e) => {
-      autoCycle = e.target.checked;
-      if (autoCycle) ui.toastMessage('Auto day/night enabled');
-    };
-  }
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyO') settings.classList.toggle('hidden');
@@ -319,27 +289,6 @@ function persist() {
     flags: { rainMode, nightMode }
   });
   ui.showSaved();
-}
-
-
-function updateTargetHint() {
-  const remaining = map.interactables.filter((item) => !item.discovered && item.type !== 'npc');
-  if (!remaining.length) {
-    ui.setTargetHint('Target: all relics discovered ✅');
-    return;
-  }
-
-  let nearest = remaining[0];
-  let nearestDist = player.object.position.distanceTo(nearest.mesh.position);
-  for (const item of remaining) {
-    const d = player.object.position.distanceTo(item.mesh.position);
-    if (d < nearestDist) {
-      nearest = item;
-      nearestDist = d;
-    }
-  }
-
-  ui.setTargetHint(`Target: ${nearest.name} · ${nearestDist.toFixed(1)}m`);
 }
 
 function drawMinimap() {

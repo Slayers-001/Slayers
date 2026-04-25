@@ -54,8 +54,6 @@ export class MultiplayerClient {
       for (const [id, obj] of this.remotePlayers) {
         if (!incoming.has(id)) {
           this.scene.remove(obj.group);
-          obj.label.material.map?.dispose();
-          obj.label.material.dispose();
           this.remotePlayers.delete(id);
         }
       }
