@@ -1,12 +1,8 @@
 {
   "name": "slayers-polished",
-  "version": "3.1.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=20.10.0",
-    "npm": ">=10"
-  },
   "scripts": {
     "dev": "vite",
     "dev:server": "node server/index.js",
@@ -15,11 +11,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "three": "^0.180.0",
-    "vite": "^7.1.12"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "ws": "^8.18.3"
+    "vite": "^7.1.12"
   }
 }
