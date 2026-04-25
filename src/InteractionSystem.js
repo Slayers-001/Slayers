@@ -1,29 +1,26 @@
 import * as THREE from 'three';
 
 export class InteractionSystem {
-  constructor(camera, interactables, onInteract, onHover, audio, onMissInteract = null) {
+  constructor(camera, interactables, onInteract, onHover, audio) {
     this.camera = camera;
     this.interactables = interactables;
     this.onInteract = onInteract;
     this.onHover = onHover;
     this.audio = audio;
-    this.onMissInteract = onMissInteract;
 
     this.raycaster = new THREE.Raycaster();
-    this.raycaster.far = 4.4;
+    this.raycaster.far = 4.2;
     this.current = null;
 
     window.addEventListener('keydown', (e) => {
-      if (e.code !== 'KeyE') return;
-      if (document.activeElement?.tagName === 'INPUT') return;
-      this.interact();
+      if (e.code === 'KeyE') this.interact();
     });
   }
 
   update() {
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const hits = this.raycaster.intersectObjects(this.interactables.map((item) => item.mesh), false);
-    const candidate = hits.length ? hits.reduce((nearest, hit) => (hit.distance < nearest.distance ? hit : nearest), hits[0]).object : null;
+    const candidate = hits[0]?.object || null;
 
     if (this.current && this.current !== candidate) {
       this.current.material.emissive?.setHex(0x161616);
@@ -33,30 +30,23 @@ export class InteractionSystem {
 
     this.current = candidate;
     if (this.current) {
-      this.current.material.emissive?.setHex(0x396f31);
+      this.current.material.emissive?.setHex(0x375f2d);
       this.current.userData.baseScale ||= this.current.scale.x;
-      this.current.scale.setScalar(this.current.userData.baseScale * 1.05);
+      this.current.scale.setScalar(this.current.userData.baseScale * 1.04);
       const item = this.interactables.find((obj) => obj.mesh === this.current);
       this.onHover(item);
     }
   }
 
   interact() {
-    if (!this.current) {
-      this.onMissInteract?.();
-      return;
-    }
-
+    if (!this.current) return;
     const item = this.interactables.find((obj) => obj.mesh === this.current);
-    if (!item) {
-      this.onMissInteract?.();
-      return;
-    }
+    if (!item) return;
 
     this.audio.uiClick();
     const base = this.current.userData.baseScale || this.current.scale.x;
-    this.current.scale.setScalar(base * 1.22);
-    setTimeout(() => this.current.scale.setScalar(base * 1.05), 120);
+    this.current.scale.setScalar(base * 1.25);
+    setTimeout(() => this.current.scale.setScalar(base * 1.04), 120);
 
     this.onInteract(item);
   }

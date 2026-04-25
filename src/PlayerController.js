@@ -59,9 +59,9 @@ export class PlayerController {
     const targetHeight = crouch ? this.crouchHeight : this.standingHeight;
     this.height += (targetHeight - this.height) * Math.min(1, dt * 14);
 
-    const forwardInput = Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'));
-    const strafeInput = Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA'));
-    this.intent.set(strafeInput, 0, -forwardInput).normalize();
+    const forward = Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'));
+    const strafe = Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA'));
+    this.intent.set(strafe, 0, forward).normalize();
 
     const moveSpeed = this.walkSpeed * (sprint ? 1.55 : 1) * (crouch ? 0.58 : 1);
     const accel = this.grounded ? this.accelGround : this.accelAir;
